@@ -63,8 +63,10 @@ class Application():
         self.frames()
         self.f_saved = True  # Sampled data saved
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.bus = smbus.SMBus(1)
-        self.i2c_address = 0x1D
+        self.bus1 = smbus.SMBus(1)
+        self.bus2 = smbus.SMBus(2)
+        self.i2c_address1 = 0x1D
+        self.i2c_addrses2 = 0x1C
 
 
     def on_closing(self):
@@ -243,7 +245,7 @@ class Application():
                 if(time.time()-t0) > t_timeout:
                     timeout_state=True
             if (timeout_state == False):
-                
+
                 totalTime=time.time() - t0
                 print(totalTime)
                 self.tab1Bt8.configure(text="READ SENSOR"+"\n"+str(totalTime)[:6])
@@ -484,8 +486,8 @@ class Application():
         self.toolbar5.update()
         self.canvas5._tkcanvas.pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
-    def read_data1(self):
-        data = self.bus.read_i2c_block_data(self.i2c_address, 0x00, 7)
+    def read_i2c_ch1(self):
+        data = self.bus1.read_i2c_block_data(self.i2c_address1, 0x00, 7)
         xAccl = (data[1] * 256 + data[2]) / 4
         if xAccl > 8192:
             xAccl -= 16384
@@ -506,6 +508,31 @@ class Application():
         # binh2.append(yAccl)
         # binh3.append(zAccl)
         return [xAccl,yAccl,zAccl]
+
+
+    def read_i2c_ch2(self):
+        data = self.bus2.read_i2c_block_data(self.i2c_address2, 0x00, 7)
+        xAccl = (data[1] * 256 + data[2]) / 4
+        if xAccl > 8192:
+            xAccl -= 16384
+        xAccl = xAccl / 4096 * 9.8
+        yAccl = (data[3] * 256 + data[4]) / 4
+        if yAccl > 8192:
+            yAccl -= 16384
+        yAccl = yAccl / 4096 * 9.8
+        zAccl = (data[5] * 256 + data[6]) / 4
+        if zAccl > 8192:
+            zAccl -= 16384
+        zAccl = zAccl / 4096 * 9.8
+        # print('X direction: %d', xAccl)
+        # print('Y direction: %d', yAccl)
+        # print('Z direction: %d', zAccl)
+        # global binh1,binh2,binh3
+        # binh1.append(xAccl)
+        # binh2.append(yAccl)
+        # binh3.append(zAccl)
+        return [xAccl,yAccl,zAccl]
+
 
     def creatThread(self):
         runT = Thread(target=self.read_data1)
@@ -533,10 +560,11 @@ class Application():
             if ((time.time() - t0) >= 0.00125):
                 t0 = time.time()
                 # self.creatThread()
-                [xAcc,yAcc,zAcc]=self.read_data1()
-                chanel1.append(xAcc)
-                chanel2.append(yAcc)
-                chanel3.append(zAcc)
+                [xAcc1, yAcc1, zAcc1]=self.read_i2c_ch1()
+                [xAcc2, yAcc2, zAcc2] = self.read_i2c_ch2()
+                chanel1.append(zAcc1)
+                chanel2.append(zAcc2)
+                chanel3.append(xAcc2)
                 countt += 1
                 # print("Canal 1: %2.4s    Canal2: %2.4s  Canal: %2.4s " % (xAccl, yAccl, zAccl))
             else:
@@ -624,21 +652,38 @@ class Application():
         mma8451_reg_ctrl5 = 0x2A
         mma8451_reg_xyz_data_cfg = 0x0E
 
-        self.bus.write_byte_data(self.i2c_address, mma8451_reg_ctrl2, 0x40)
+        self.bus1.write_byte_data(self.i2c_address1, mma8451_reg_ctrl2, 0x40)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, mma8451_reg_xyz_data_cfg, 0x00)
+        self.bus1.write_byte_data(self.i2c_address1, mma8451_reg_xyz_data_cfg, 0x00)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, mma8451_reg_ctrl2, 0x01)
+        self.bus1.write_byte_data(self.i2c_address1, mma8451_reg_ctrl2, 0x01)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, mma8451_reg_ctrl4, 0x01)
+        self.bus1.write_byte_data(self.i2c_address1, mma8451_reg_ctrl4, 0x01)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, mma8451_reg_ctrl5, 0x01)
+        self.bus1.write_byte_data(self.i2c_address1, mma8451_reg_ctrl5, 0x01)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, mma8451_reg_ctrl1, 0x04 | 0x01)
+        self.bus1.write_byte_data(self.i2c_address1, mma8451_reg_ctrl1, 0x04 | 0x01)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, 0x11, 0x40)
+        self.bus1.write_byte_data(self.i2c_address1, 0x11, 0x40)
         time.sleep(0.1)
-        self.bus.write_byte_data(self.i2c_address, 0x0F, 0x20)
+        self.bus1.write_byte_data(self.i2c_address1, 0x0F, 0x20)
+        time.sleep(0.1)
+
+        self.bus2.write_byte_data(self.i2c_address2, mma8451_reg_ctrl2, 0x40)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, mma8451_reg_xyz_data_cfg, 0x00)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, mma8451_reg_ctrl2, 0x01)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, mma8451_reg_ctrl4, 0x01)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, mma8451_reg_ctrl5, 0x01)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, mma8451_reg_ctrl1, 0x04 | 0x01)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, 0x11, 0x40)
+        time.sleep(0.1)
+        self.bus2.write_byte_data(self.i2c_address2, 0x0F, 0x20)
         time.sleep(0.1)
 
 if __name__ == '__main__':
