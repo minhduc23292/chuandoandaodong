@@ -1,0 +1,16 @@
+import time
+import smbus
+from time import sleep
+bus = smbus.SMBus(1)
+addr = 0x08
+val = 0x10
+length=10
+count=0
+t0=time.time()
+store_arr=[]
+while(count<length):
+    bus.write_byte(addr,val)
+    ahihi=bus.read_i2c_block_data(addr,19)
+    print(ahihi)
+	fh
+    count+=1
