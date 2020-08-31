@@ -40,7 +40,7 @@ from threading import Thread
 from multiprocessing.pool import ThreadPool
 import ADS1256
 import RPi.GPIO as GPIO
-data_length = 512 # Amount of samples to read.16384
+data_length = 50 # Amount of samples to read.16384
 sample_rate = 800
 g_scale = (3.3 / 1024) * (1000 / 300)
 max_freq = sample_rate / 2  # Maximum signal frequency, X and Y axis (accelerometer).1500
@@ -64,9 +64,9 @@ class Application():
         self.f_saved = True  # Sampled data saved
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.bus1 = smbus.SMBus(1)
-        self.bus2 = smbus.SMBus(2)
+        self.bus2 = smbus.SMBus(1)
         self.i2c_address1 = 0x1D
-        self.i2c_addrses2 = 0x1C
+        self.i2c_address2 = 0x1C
 
 
     def on_closing(self):
@@ -297,7 +297,7 @@ class Application():
         [self.tab1Bt5,self.tab1Bt6, self.tab1Bt7, self.tab1Bt8] = creatTab.CRT.drawRightTab(self.tab1Frame3, ['CH', 'CH3', 'ALL CHANEL', 'READ SENSOR'],
                                   ['disable', 'normal', 'normal', 'normal'],['grey','cyan','cyan','cyan'])
 
-        self.tab1Photo= PhotoImage(file="/home/pi/Downloads/project/image/channel1.gif")
+        self.tab1Photo = PhotoImage(file="/home/pi/Downloads/project/image/channel1.gif")
         self.tab1Photo1 = PhotoImage(file="/home/pi/Downloads/project/image/serial1.gif")
         self.tab1Photo2 = PhotoImage(file="/home/pi/Downloads/project/image/readdata.gif")
         self.tab6Photo1 = PhotoImage(file="/home/pi/Downloads/project/image/shutdown1.gif")
@@ -597,7 +597,9 @@ class Application():
     def read_spi(self):
         ADC = ADS1256.ADS1256()
         ADC.ADS1256_init()
-        time.sleep(1)
+        time.sleep(0.1)
+        ADC.ADS1256_SetMode(1)
+        time.sleep(0.1)
         global g_chanel_1, g_chanel_2, g_chanel_3, data_length
         chanel1 = []
         chanel2 = []
@@ -607,15 +609,18 @@ class Application():
         t0 = time.time()
         t1 = t0
         while ((countt < data_length) and (timeout_state == False)):
-            if ((time.time() - t0) >= 0.02):
+            if ((time.time() - t0) >= 0.01):
                 t0 = time.time()
                 # self.creatThread()
-                ADC_Value = ADC.ADS1256_GetChannalValue(7)
-                gt1=(ADC_Value*5.0/0x7fffff)/120*1000
-                # print(gt1)
-                chanel1.append(gt1*1.5625-6.5)
-                chanel2.append(gt1*1.5625-6.5)
-                chanel3.append(gt1*1.5625-6.5)
+                ADC_Value = ADC.ADS1256_GetChannalValue(3)
+                gt1=(ADC_Value*5.0/0x7fffff)
+                print(gt1)
+                # chanel1.append(gt1*1.5625-6.5)
+                # chanel2.append(gt1*1.5625-6.5)
+                # chanel3.append(gt1*1.5625-6.5)
+                chanel1.append(gt1)
+                chanel2.append(gt1)
+                chanel3.append(gt1)
                 countt += 1
                 # print("Canal 1: %2.4s    Canal2: %2.4s  Canal: %2.4s " % (ADC_Value*5.0/0x7fffff, ADC_Value, ADC_Value))
             else:
@@ -641,6 +646,9 @@ class Application():
             # binh1=[]
             # binh2=[]
             # binh3=[]
+            chanel1=[]
+            chanel2=[]
+            chanel3=[]
         else:
             print("Serial port timeout")
             message_string = ("Serial port timeout \n")

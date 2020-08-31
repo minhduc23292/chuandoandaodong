@@ -2,7 +2,7 @@ import config
 import RPi.GPIO as GPIO
 
 
-ScanMode = 0
+# ScanMode = 0
 
 
 # gain channel
@@ -70,6 +70,7 @@ class ADS1256:
         self.rst_pin = config.RST_PIN
         self.cs_pin = config.CS_PIN
         self.drdy_pin = config.DRDY_PIN
+        self.ScanMode = 0
 
     # Hardware reset
     def ADS1256_reset(self):
@@ -147,19 +148,22 @@ class ADS1256:
             self.ADS1256_WriteReg(REG_E['REG_MUX'], (6 << 4) | 7) 	#DiffChannal   AIN6-AIN7
 
     def ADS1256_SetMode(self, Mode):
-        ScanMode = Mode
+        self.ScanMode = Mode
 
     def ADS1256_init(self):
         if (config.module_init() != 0):
             return -1
         self.ADS1256_reset()
+        config.delay_ms(10)
         id = self.ADS1256_ReadChipID()
+        print('day la ID=', id)
         if id == 3 :
-            print("ID Read success  ")
+            print("ID Read success  "
+                  )
         else:
             print("ID Read failed   ")
-            return -1
-        self.ADS1256_ConfigADC(ADS1256_GAIN_E['ADS1256_GAIN_1'], ADS1256_DRATE_E['ADS1256_30000SPS'])
+            # return -1
+        self.ADS1256_ConfigADC(ADS1256_GAIN_E['ADS1256_GAIN_1'], ADS1256_DRATE_E['ADS1256_1000SPS'])
         return 0
         
     def ADS1256_Read_ADC_Data(self):
@@ -178,7 +182,7 @@ class ADS1256:
         return read
  
     def ADS1256_GetChannalValue(self, Channel):
-        if(ScanMode == 0):# 0  Single-ended input  8 channel1 Differential input  4 channe 
+        if(self.ScanMode == 0):# 0  Single-ended input  8 channel1 Differential input  4 channe
             if(Channel>=8):
                 return 0
             self.ADS1256_SetChannal(Channel)
@@ -191,10 +195,11 @@ class ADS1256:
             if(Channel>=4):
                 return 0
             self.ADS1256_SetDiffChannal(Channel)
+            config.delay_ms(1)
             self.ADS1256_WriteCmd(CMD['CMD_SYNC'])
-            # config.delay_ms(10) 
+            # config.delay_ms(10)
             self.ADS1256_WriteCmd(CMD['CMD_WAKEUP'])
-            # config.delay_ms(10) 
+            # config.delay_ms(10)
             Value = self.ADS1256_Read_ADC_Data()
         return Value
         
